@@ -1,7 +1,7 @@
 import os
-import cv2  
+import cv2
 
-def extract_frames(video_path, output_folder):
+def extract_frames(video_path, output_folder, target_size=(640, 480), max_file_size_kb=100):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -10,23 +10,42 @@ def extract_frames(video_path, output_folder):
     count = 0
 
     while success:
+        # Resize the image to target size
+        resized_image = cv2.resize(image, target_size)
+
+        # Initialize compression quality
+        compression_quality = 95  # Start with high quality
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality]
+
+        # Compress image and check size
+        while True:
+            is_success, encoded_image = cv2.imencode('.jpg', resized_image, encode_param)
+            if is_success:
+                if len(encoded_image) / 1024 <= max_file_size_kb or compression_quality <= 10:
+                    break
+                compression_quality -= 5  # Reduce quality to reduce size
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality]
+
+        # Save the compressed image
         frame_path = os.path.join(output_folder, f"frame{count:04d}.jpg")
-        cv2.imwrite(frame_path, image)
+        with open(frame_path, 'wb') as f:
+            f.write(encoded_image)
+
         success, image = vidcap.read()
         count += 1
 
     vidcap.release()
 
-def process_videos_in_folder(input_folder, output_base_folder):
+def process_videos_in_folder(input_folder, output_base_folder, target_size=(640, 480), max_file_size_kb=100):
     for root, dirs, files in os.walk(input_folder):
         for file in files:
             if file.endswith('.webm'):
                 video_path = os.path.join(root, file)
-                video_name = os.path.splitext(file)[0]  # Mendapatkan nama video tanpa ekstensi
+                video_name = os.path.splitext(file)[0]
                 output_folder = os.path.join(output_base_folder, video_name)
-                extract_frames(video_path, output_folder)
+                extract_frames(video_path, output_folder, target_size, max_file_size_kb)
 
-# Penggunaan
-input_folder = "C:/Users/askas/Downloads/Data Mentah/P"
-output_base_folder = "C:/Users/askas/Downloads/Dataset/P"
+# Contoh penggunaan
+input_folder = "C:/Users/askas/Downloads/Data Mentah/B"
+output_base_folder = "C:/Users/askas/Downloads/Dataset/B"
 process_videos_in_folder(input_folder, output_base_folder)
