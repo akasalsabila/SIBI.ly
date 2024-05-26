@@ -1,0 +1,32 @@
+import os
+import cv2  
+
+def extract_frames(video_path, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    vidcap = cv2.VideoCapture(video_path)
+    success, image = vidcap.read()
+    count = 0
+
+    while success:
+        frame_path = os.path.join(output_folder, f"frame{count:04d}.jpg")
+        cv2.imwrite(frame_path, image)
+        success, image = vidcap.read()
+        count += 1
+
+    vidcap.release()
+
+def process_videos_in_folder(input_folder, output_base_folder):
+    for root, dirs, files in os.walk(input_folder):
+        for file in files:
+            if file.endswith('.webm'):
+                video_path = os.path.join(root, file)
+                video_name = os.path.splitext(file)[0]  # Mendapatkan nama video tanpa ekstensi
+                output_folder = os.path.join(output_base_folder, video_name)
+                extract_frames(video_path, output_folder)
+
+# Penggunaan
+input_folder = "C:/Users/askas/Downloads/Data Mentah/P"
+output_base_folder = "C:/Users/askas/Downloads/Dataset/P"
+process_videos_in_folder(input_folder, output_base_folder)
